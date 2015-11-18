@@ -1,6 +1,6 @@
 {
     "trello": {
-        "key": "<trello app key>",
+        "key": "0d8f099586bb1ba35aeb524fd4bd0032",
         "token": "<personal trello token>",
         "boards": {
             "Board1": {

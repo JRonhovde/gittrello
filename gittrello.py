@@ -70,12 +70,14 @@ if trelloLink == 1:
     cardName = getCard['name']
     cardURL = getCard['url']
 
+
     try:
         fromList = trelloBoards[boardName]['from']
-        if listName != fromList:
-            sys.exit("The card '"+cardName+"' is not in the '"+fromList+"' list");
     except:
-        sys.exit("The board '"+boardName+"' was not found in gittrello.json")
+        sys.exit("The board '"+boardName+"' was not found in .gittrello.json")
+
+    if listName != fromList:
+        sys.exit("The card '"+cardName+"' is not in the '"+fromList+"' list");
 
     try:
         tag = trelloBoards[boardName]['tag'] 
