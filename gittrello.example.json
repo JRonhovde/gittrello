@@ -1,0 +1,43 @@
+{
+    "trello": {
+        "key": "<trello app key>",
+        "token": "<personal trello token>",
+        "boards": {
+            "Board1": {
+                "from": "<list name>",
+                "to": "<list name>",
+                "tag": "<board tag for github>"
+            },
+            "Bugs": {
+                "from": "In Progress",
+                "to": "In Review",
+                "tag": "bug"
+            }
+        }
+    },
+    "github":{
+        "token": "<github access token with 'repo' permissions>",
+        "tags": {
+            "bug": {
+                "labels": [
+                    "Dev Review",
+                    "QA Review"
+                ]
+            },
+            "<board tag>": {
+                "labels": [
+                    "Label1",
+                    "Label2"
+                ]
+            },
+            "dev": {
+                "labels": [
+                    "Dev Review"
+                ]
+            }
+        }
+    },
+    "skiptags": [
+        "dev"
+    ]
+}
