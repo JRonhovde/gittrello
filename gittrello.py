@@ -40,11 +40,11 @@ branchNameList = re.findall(r"[^-]+|-", branchname)[::2]
 
 if len(branchNameList[-1]) != 8:
     trelloLink = 0
-else:
-    for skiptag in skipTags:
-        if skiptag == branchNameList[-1]:
-            tag = skiptag
-            trelloLink = 0
+
+for skiptag in skipTags:
+    if skiptag == branchNameList[-1]:
+        tag = branchNameList.pop()
+        trelloLink = 0
 
 repoURL = sys.argv[2]
 repoObj = re.match(r'(https\:\/\/github\.com\/|git\@github\.com\:)([^\/]*)\/([^.]*)',str(repoURL))
