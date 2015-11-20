@@ -152,7 +152,7 @@ except:
 try:
     prURL = createPullRequest['_links']['html']['href']
 except:
-    sys.exit("Unabled to retrieve pull request url, make sure your pushed your branch to github")
+    sys.exit("Unabled to retrieve pull request url, make sure your branch has been pushed to github")
 
 try:
     prNumber = createPullRequest['number']
