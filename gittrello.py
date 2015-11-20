@@ -8,7 +8,19 @@ import re
 import inspect
 import requests
 import string
+import urllib
 
+
+branchname = sys.argv[1]
+repoURL = sys.argv[2]
+userAddLabels = sys.argv[3]
+if userAddLabels == 0:
+    userAddLabels = ''
+userRemoveLabels = sys.argv[4]
+if userRemoveLabels == '0':
+    userRemoveLabels = ''
+
+issueURL = ''
 
 homePath = os.path.expanduser('~')+'/.gittrello.json'
 parentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -35,7 +47,6 @@ skipTags = data['skiptags']
 
 trelloLink = 1
 
-branchname = sys.argv[1]
 branchNameList = re.findall(r"[^-]+|-", branchname)[::2]
 
 if len(branchNameList[-1]) != 8:
@@ -46,13 +57,78 @@ for skiptag in skipTags:
         tag = branchNameList.pop()
         trelloLink = 0
 
-repoURL = sys.argv[2]
 repoObj = re.match(r'(https\:\/\/github\.com\/|git\@github\.com\:)([^\/]*)\/([^.]*)',str(repoURL))
 try:
     repoOwner = repoObj.group(2)
     repoName = repoObj.group(3)
+    githubBase = "https://api.github.com/repos/"+repoOwner+"/"+repoName
 except:
     sys.exit('Could not retrieve repository information, make sure you are in a git repository.')
+
+#{ # User labels(add labels to existing PR 
+if len(userRemoveLabels) > 0:
+    getPullRequestURL = githubBase+"/pulls?head="+repoOwner+":"+branchname+"&access_token="+gitHubToken
+    try:
+         prTitle = requests.get(getPullRequestURL).json()[0]['title']
+         issueURL = requests.get(getPullRequestURL).json()[0]['_links']['issue']['href']
+    except:
+        sys.exit('Invalid branch. Check that your branch is spelled correctly. Also check that your branch is associated with a pull request on GitHub')
+
+    userRemoveLabelsList = userRemoveLabels.split(', ')
+
+    for userLabel in userRemoveLabelsList:
+        checkLabelURL = githubBase+"/labels/"+urllib.quote(userLabel, safe='')+"?access_token="+gitHubToken
+        try:
+            checkLabelResp = requests.get(checkLabelURL).json()
+        except:
+            sys.exit("Unable to find label in "+repoName)
+
+        try:
+            name = checkLabelResp['name']
+            userRemoveLabelsURL = issueURL+"/labels/"+urllib.quote(userLabel, safe='')+"?access_token="+gitHubToken
+            try:
+                userRemoveLabelsResp = requests.delete(userRemoveLabelsURL).json()
+            except:
+                sys.exit("Unable to remove "+name+" from '"+prTitle+"'")
+        except:
+             print "Label "+userLabel+" not found"
+
+#}
+         
+#{ # User labels(add labels to existing PR 
+if len(userAddLabels) > 0:
+
+    userAddLabelsList = userAddLabels.split(', ')
+    githubBase = "https://api.github.com/repos/"+repoOwner+"/"+repoName
+
+    verifiedLabels = []
+    for userLabel in userAddLabelsList:
+        checkLabelURL = githubBase+"/labels/"+urllib.quote(userLabel, safe='')+"?access_token="+gitHubToken
+        try:
+            checkLabelResp = requests.get(checkLabelURL).json()
+        except:
+            sys.exit("Unable to find label in "+repoName)
+
+        if checkLabelResp['name'] == userLabel:
+            verifiedLabels.append(userLabel)
+
+    if len(verifiedLabels) > 0:
+        if len(issueURL) == 0:
+            getPullRequestURL = githubBase+"/pulls?head="+repoOwner+":"+branchname+"&access_token="+gitHubToken
+            try:
+                 prTitle = requests.get(getPullRequestURL).json()[0]['title']
+                 issueURL = requests.get(getPullRequestURL).json()[0]['_links']['issue']['href']
+            except:
+                sys.exit('Invalid branch. Check that your branch is spelled correctly. Also check that your branch is associated with a pull request on GitHub')
+
+        userAddLabelsURL = issueURL+"/labels?access_token="+gitHubToken
+        try:
+            userAddLabelsResp = requests.post(userAddLabelsURL, json.dumps(verifiedLabels)).json()
+        except:
+            sys.exit("Unable to add labels to " +prTitle)
+
+        sys.exit("Labels '"+userAddLabels+"' added to '"+prTitle+"'")
+#}
 
 if trelloLink == 1:
     cardLink = branchNameList.pop()
@@ -161,7 +237,9 @@ except:
 
 gitHubLabels = []
 for label in gitHubTags[tag]['labels']:
-    addLabel = raw_input("Would you like to add the '"+label+"' label to your pull request (y/n)? ")
+    labelPrompt = "Would you like to add the '"+label+"' label to your pull request (y/n)? "
+
+    addLabel = raw_input(labelPrompt)
     if addLabel.lower() == "y":
         gitHubLabels.append(label)
 
