@@ -14,7 +14,7 @@ import urllib
 branchname = sys.argv[1]
 repoURL = sys.argv[2]
 userAddLabels = sys.argv[3]
-if userAddLabels == 0:
+if userAddLabels == '0':
     userAddLabels = ''
 userRemoveLabels = sys.argv[4]
 if userRemoveLabels == '0':

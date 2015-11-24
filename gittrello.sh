@@ -1,5 +1,5 @@
 # !bin/bash
-gittrello() {
+gittrello(){
     PUSH=1
     ADDLABEL=0
     REMOVELABEL=0
