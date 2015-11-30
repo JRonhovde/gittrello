@@ -209,7 +209,7 @@ while len(prBody) == 0:
 if prBody == 'Q':
     sys.exit("Pull request aborted")
 elif trelloLink == 1:
-    prBody = prBody+"\n\n"+cardURL
+    prBody = prBody+"\n\n["+cardName+"]("+cardURL+")"
 
 
 createPullRequestURL = "https://api.github.com/repos/"+repoOwner+"/"+repoName+"/pulls?access_token="+gitHubToken
