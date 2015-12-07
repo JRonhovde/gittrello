@@ -21,6 +21,7 @@ if userRemoveLabels == '0':
     userRemoveLabels = ''
 
 issueURL = ''
+labelMessage = []
 
 homePath = os.path.expanduser('~')+'/.gittrello.json'
 parentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -93,6 +94,11 @@ if len(userRemoveLabels) > 0:
         except:
              print "Label "+userLabel+" not found"
 
+        if len(userRemoveLabelsList) > 1:
+            labelMessage.append("Labels '"+userRemoveLabels+"' removed from '"+prTitle+"'")
+        else:
+            labelMessage.append("'"+userRemoveLabels+"' removed from '"+prTitle+"'")
+
 #}
          
 #{ # User labels(add labels to existing PR 
@@ -127,8 +133,17 @@ if len(userAddLabels) > 0:
         except:
             sys.exit("Unable to add labels to " +prTitle)
 
-        sys.exit("Labels '"+userAddLabels+"' added to '"+prTitle+"'")
+        if len(userAddLabelsList) > 1:
+            labelMessage.append("Labels '"+userAddLabels+"' added to '"+prTitle+"'")
+        else:
+            labelMessage.append("'"+userAddLabels+"' added to '"+prTitle+"'")
+
 #}
+
+if len(labelMessage) > 0:
+    labelMessage = "\n".join(labelMessage)
+    sys.exit(labelMessage)
+
 
 if trelloLink == 1:
     cardLink = branchNameList.pop()
