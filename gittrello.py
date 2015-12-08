@@ -68,6 +68,7 @@ except:
 
 #{ # User labels(add labels to existing PR 
 if len(userRemoveLabels) > 0:
+    verifiedRemoved = []
     getPullRequestURL = githubBase+"/pulls?head="+repoOwner+":"+branchname+"&access_token="+gitHubToken
     try:
          prTitle = requests.get(getPullRequestURL).json()[0]['title']
@@ -89,11 +90,17 @@ if len(userRemoveLabels) > 0:
             userRemoveLabelsURL = issueURL+"/labels/"+urllib.quote(userLabel, safe='')+"?access_token="+gitHubToken
             try:
                 userRemoveLabelsResp = requests.delete(userRemoveLabelsURL).json()
-                labelMessage.append("'"+userLabel+"' removed from '"+prTitle+"'")
+                verifiedRemoved.append(userLabel)
+
             except:
                 print "Unable to remove "+name+" from '"+prTitle+"'"
         except:
              print "Label "+userLabel+" not found"
+
+    if len(verifiedRemoved) > 1:
+        labelMessage.append("Labels '"+"', '".join(verifiedRemoved)+"' removed from '"+prTitle+"'")
+    else:
+        labelMessage.append("'"+', '.join(verifiedRemoved)+"' removed from '"+prTitle+"'")
 
 
 #}
@@ -127,7 +134,7 @@ if len(userAddLabels) > 0:
         userAddLabelsURL = issueURL+"/labels?access_token="+gitHubToken
         try:
             userAddLabelsResp = requests.post(userAddLabelsURL, json.dumps(verifiedLabels)).json()
-            labelMessage.append("'"+userLabel+"' added to '"+prTitle+"'")
+            labelMessage.append("Labels '"+"', '".join(verifiedLabels)+"' added to '"+prTitle+"'")
         except:
             print ("Unable to add label '"+userLabel+"' to " +prTitle)
 
