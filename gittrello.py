@@ -89,15 +89,12 @@ if len(userRemoveLabels) > 0:
             userRemoveLabelsURL = issueURL+"/labels/"+urllib.quote(userLabel, safe='')+"?access_token="+gitHubToken
             try:
                 userRemoveLabelsResp = requests.delete(userRemoveLabelsURL).json()
+                labelMessage.append("'"+userLabel+"' removed from '"+prTitle+"'")
             except:
-                sys.exit("Unable to remove "+name+" from '"+prTitle+"'")
+                print "Unable to remove "+name+" from '"+prTitle+"'"
         except:
              print "Label "+userLabel+" not found"
 
-        if len(userRemoveLabelsList) > 1:
-            labelMessage.append("Labels '"+userRemoveLabels+"' removed from '"+prTitle+"'")
-        else:
-            labelMessage.append("'"+userRemoveLabels+"' removed from '"+prTitle+"'")
 
 #}
          
@@ -130,13 +127,10 @@ if len(userAddLabels) > 0:
         userAddLabelsURL = issueURL+"/labels?access_token="+gitHubToken
         try:
             userAddLabelsResp = requests.post(userAddLabelsURL, json.dumps(verifiedLabels)).json()
+            labelMessage.append("'"+userLabel+"' added to '"+prTitle+"'")
         except:
-            sys.exit("Unable to add labels to " +prTitle)
+            print ("Unable to add label '"+userLabel+"' to " +prTitle)
 
-        if len(userAddLabelsList) > 1:
-            labelMessage.append("Labels '"+userAddLabels+"' added to '"+prTitle+"'")
-        else:
-            labelMessage.append("'"+userAddLabels+"' added to '"+prTitle+"'")
 
 #}
 
