@@ -22,6 +22,8 @@ if userRemoveLabels == '0':
 
 issueURL = ''
 labelMessage = []
+boardName = ''
+boardLabels = []
 
 homePath = os.path.expanduser('~')+'/.gittrello.json'
 parentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -150,7 +152,7 @@ if trelloLink == 1:
     cardLink = branchNameList.pop()
 
     try:
-        getCardURL = "https://api.trello.com/1/cards/"+cardLink+"?fields=name,url&board=true&board_fields=name&list=true&list_fields=name&key="+trelloKey+"&token="+trelloToken
+        getCardURL = "https://api.trello.com/1/cards/"+cardLink+"?fields=name,url,labels&board=true&board_fields=name&list=true&list_fields=name&key="+trelloKey+"&token="+trelloToken
         getCard = requests.get(getCardURL).json()
     except:
         sys.exit("Unable to get card with shortlink '"+cardLink+"'")
@@ -161,8 +163,13 @@ if trelloLink == 1:
     listID = getCard['list']['id']
     cardName = re.sub(r"^\(\d\) ", "", getCard['name']) # remove NUTS from card name
     cardURL = getCard['url']
+    cardLabels = getCard['labels']
 
-
+    try:
+        boardLabels = trelloBoards[boardName]['labels']
+    except:
+        pass
+    
     try:
         fromList = trelloBoards[boardName]['from']
     except:
@@ -244,25 +251,44 @@ except:
 try:
     prURL = createPullRequest['_links']['html']['href']
 except:
-    sys.exit("Unabled to retrieve pull request url, make sure your branch has been pushed to github")
+    sys.exit("Unable to retrieve pull request url, make sure your branch has been pushed to github")
 
 try:
     prNumber = createPullRequest['number']
 except:
     sys.exit('Unable to retrieve pull request number.')
 
-gitHubLabels = []
-for label in gitHubTags[tag]['labels']:
+allLabels = []
+
+try:
+    allLabels += gitHubTags[tag]['labels']
+except:
+    pass
+
+try:
+    allLabels += [boardLabels[label['name']] for label in cardLabels if label['name'] in boardLabels]
+except Exception as e:
+    print e
+    pass
+
+
+def label_prompt(label):
     labelPrompt = "Would you like to add the '"+label+"' label to your pull request (y/n)? "
 
     addLabel = raw_input(labelPrompt)
     if addLabel.lower() == "y":
-        gitHubLabels.append(label)
+        return label
 
-if len(gitHubLabels) > 0:
+try:
+    allLabels = [label_prompt(label) for label in allLabels]
+except:
+    pass
+
+
+if len(allLabels) > 0:
     addLabelsURL = "https://api.github.com/repos/"+repoOwner+"/"+repoName+"/issues/"+str(prNumber)+"/labels?access_token="+gitHubToken
     try:
-        addLabels = requests.post(addLabelsURL, json.dumps(gitHubLabels))
+        addLabels = requests.post(addLabelsURL, json.dumps(allLabels))
     except:
         print "There was an error assigning labels to "+prTitle
 
