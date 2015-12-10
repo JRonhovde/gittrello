@@ -22,6 +22,14 @@ if userRemoveLabels == '0':
 
 issueURL = ''
 labelMessage = []
+boardName = ''
+boardLabels = []
+trelloLink = 1
+
+# get home path and parent path
+# homepath is the user's home directory
+# parentpath is the parent directory of gittrello.py
+# homepath is tested before parentpath
 
 homePath = os.path.expanduser('~')+'/.gittrello.json'
 parentDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -39,6 +47,7 @@ with open(jsonFile) as data_file:
     except:
         sys.exit(jsonFile+' is not a valid JSON file')
 
+# data extracted from .gittrello.json
 trelloKey = data['trello']['key']
 trelloBoards = data['trello']['boards']
 trelloToken = data['trello']['token']
@@ -46,18 +55,20 @@ gitHubToken = data['github']['token']
 gitHubTags = data['github']['tags']
 skipTags = data['skiptags']
 
-trelloLink = 1
-
 branchNameList = re.findall(r"[^-]+|-", branchname)[::2]
 
+# Trello shortlinks are 8 characters long
 if len(branchNameList[-1]) != 8:
     trelloLink = 0
 
+# don't ask to link if the last part of the branch name is
+# on the skiptag list
 for skiptag in skipTags:
     if skiptag == branchNameList[-1]:
         tag = branchNameList.pop()
         trelloLink = 0
 
+# match repo owner and repo name
 repoObj = re.match(r'(https\:\/\/github\.com\/|git\@github\.com\:)([^\/]*)\/([^.]*)',str(repoURL))
 try:
     repoOwner = repoObj.group(2)
@@ -81,19 +92,20 @@ if len(userRemoveLabels) > 0:
     for userLabel in userRemoveLabelsList:
         checkLabelURL = githubBase+"/labels/"+urllib.quote(userLabel, safe='')+"?access_token="+gitHubToken
         try:
-            checkLabelResp = requests.get(checkLabelURL).json()
+            # check if the label exists for this repository
+            checkLabelResp = requests.get(checkLabelURL).json()['name']
         except:
-            sys.exit("Unable to find label in "+repoName)
+            print "Unable to find '"+userLabel+"' in '"+repoName+"'"
 
         try:
-            name = checkLabelResp['name']
+            # remove label from pull request (uses Issues API)
             userRemoveLabelsURL = issueURL+"/labels/"+urllib.quote(userLabel, safe='')+"?access_token="+gitHubToken
             try:
                 userRemoveLabelsResp = requests.delete(userRemoveLabelsURL).json()
                 verifiedRemoved.append(userLabel)
 
             except:
-                print "Unable to remove "+name+" from '"+prTitle+"'"
+                print "Unable to remove "+userLabel+" from '"+prTitle+"'"
         except:
              print "Label "+userLabel+" not found"
 
@@ -141,16 +153,18 @@ if len(userAddLabels) > 0:
 
 #}
 
+# exit with feedback message after adding/removing labels
 if len(labelMessage) > 0:
     labelMessage = "\n".join(labelMessage)
     sys.exit(labelMessage)
 
 
 if trelloLink == 1:
+    # trello shortlink should be the last element in the branchNameList
     cardLink = branchNameList.pop()
 
     try:
-        getCardURL = "https://api.trello.com/1/cards/"+cardLink+"?fields=name,url&board=true&board_fields=name&list=true&list_fields=name&key="+trelloKey+"&token="+trelloToken
+        getCardURL = "https://api.trello.com/1/cards/"+cardLink+"?fields=name,url,labels&board=true&board_fields=name&list=true&list_fields=name&key="+trelloKey+"&token="+trelloToken
         getCard = requests.get(getCardURL).json()
     except:
         sys.exit("Unable to get card with shortlink '"+cardLink+"'")
@@ -159,11 +173,18 @@ if trelloLink == 1:
     boardID = getCard['board']['id']
     listName = getCard['list']['name']
     listID = getCard['list']['id']
-    cardName = re.sub(r"^\(\d\) ", "", getCard['name']) # remove NUTS from card name
+    cardName = re.sub(r"^\(\d\) ", "", getCard['name']) # remove Trello points from card name
     cardURL = getCard['url']
-
+    cardLabels = getCard['labels']
 
     try:
+        # get label associations from .gitrello.json
+        boardLabels = trelloBoards[boardName]['labels']
+    except:
+        pass
+    
+    try:
+        # this is the list the card should be in
         fromList = trelloBoards[boardName]['from']
     except:
         sys.exit("The board '"+boardName+"' was not found in .gittrello.json")
@@ -196,6 +217,8 @@ if trelloLink == 1:
 
 
 
+# join branch name back into a string and
+# capitalize the first letter of each word
 prName = string.capwords(" ".join(branchNameList))
 if len(tag) > 0:
     prTitle = "["+tag+"] "+prName
@@ -225,10 +248,12 @@ while len(prBody) == 0:
 if prBody == 'Q':
     sys.exit("Pull request aborted")
 elif trelloLink == 1:
+    # insert hyperlink to Trello card using markdown syntax
     prBody = prBody+"\n\n["+cardName+"]("+cardURL+")"
 
 
 createPullRequestURL = "https://api.github.com/repos/"+repoOwner+"/"+repoName+"/pulls?access_token="+gitHubToken
+
 payload = {
     "title": prTitle,
     "head": prHead,
@@ -244,25 +269,48 @@ except:
 try:
     prURL = createPullRequest['_links']['html']['href']
 except:
-    sys.exit("Unabled to retrieve pull request url, make sure your branch has been pushed to github")
+    sys.exit("Unable to retrieve pull request url, make sure your branch has been pushed to github")
 
 try:
     prNumber = createPullRequest['number']
 except:
     sys.exit('Unable to retrieve pull request number.')
 
-gitHubLabels = []
-for label in gitHubTags[tag]['labels']:
+allLabels = []
+
+try:
+    # add labels from .gittrello.json
+    allLabels += gitHubTags[tag]['labels']
+except:
+    pass
+
+try:
+    # add labels from Trello card that are associated with
+    # GitHub labels in .gittrello.json
+    allLabels += [boardLabels[label['name']] for label in cardLabels if label['name'] in boardLabels]
+except Exception as e:
+    print e
+    pass
+
+
+def label_prompt(label):
     labelPrompt = "Would you like to add the '"+label+"' label to your pull request (y/n)? "
 
     addLabel = raw_input(labelPrompt)
     if addLabel.lower() == "y":
-        gitHubLabels.append(label)
+        return label
 
-if len(gitHubLabels) > 0:
+try:
+    # confirm each label
+    allLabels = [label_prompt(label) for label in allLabels]
+except:
+    pass
+
+
+if len(allLabels) > 0:
     addLabelsURL = "https://api.github.com/repos/"+repoOwner+"/"+repoName+"/issues/"+str(prNumber)+"/labels?access_token="+gitHubToken
     try:
-        addLabels = requests.post(addLabelsURL, json.dumps(gitHubLabels))
+        addLabels = requests.post(addLabelsURL, json.dumps(allLabels))
     except:
         print "There was an error assigning labels to "+prTitle
 
@@ -270,11 +318,11 @@ if len(gitHubLabels) > 0:
 if trelloLink == 1:
     attachPullRequestURL = "https://api.trello.com/1/cards/"+cardLink+"/attachments?key="+trelloKey+"&token="+trelloToken+"&url="+prURL
     try:
-        attachPR = requests.post(attachPullRequestURL).json()
+        url = requests.post(attachPullRequestURL).json()['url']
     except:
         sys.exit("Error adding attachemnt to '"+cardName+"'. Please check your '.gittrello.json' file for errors, and report this problem on 'https://github.com/JRonhovde/gittrello'.")
 
-    if len(attachPR['url']) > 0:
+    if len(url) > 0:
         print "Pull request '"+prTitle+"' successfully created and linked to Trello card '"+cardName+"'"
     else:
         sys.exit("Unable to attach pull request '"+prTitle+" to Trello card '"+cardName+"'. Please check your '.gittrello.json' file for errors, and report this problem on 'https://github.com/JRonhovde/gittrello'.")
