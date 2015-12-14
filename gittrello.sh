@@ -11,10 +11,17 @@ gittrello(){
                 echo "GitTrello [options] application [arguments]"
                 echo " "
                 echo "options:"
-                echo "-h, --help                show brief help"
-                echo "-al, --add-label          add label to pull request for current branch"
-                echo "-rl, --remove-label       add label to pull request for current branch"
-                echo "-np, --no-push            don't push branch to remote"
+                echo "-h, --help"
+                echo ""
+                echo "-al <labels>, --add-label=<labels>"
+                echo "   Add GitHub labels to pull request for current branch. When adding multiple labels, separate them by commas. '<label1>, <label2>'"
+                echo ""
+                echo "-rl <labels>, --remove-label=<labels>"
+                echo "   Remove GitHub labels to pull request for current branch. When adding multiple labels, separate them by commas. '<label1>, <label2>'"
+                echo ""
+                echo "-np, --no-push"
+                echo "   Don't push branch to remote."
+                echo ""
                 return 1
                 ;;
             -al)
@@ -27,7 +34,7 @@ gittrello(){
                 fi
                 shift
                 ;;
-            --add-label*)
+            --add-label=*|--add-labels=*)
                 ADDLABEL=$(echo $1 | sed -e 's/^[^=]*=//g')
                 shift
                 ;;
@@ -41,7 +48,7 @@ gittrello(){
                 fi
                 shift
                 ;;
-            --remove-label*)
+            --remove-label=*|--remove-labels=*)
                 REMOVELABEL=$(echo $1 | sed -e 's/^[^=]*=//g')
                 shift
                 ;;
@@ -61,6 +68,7 @@ gittrello(){
         SOURCE="$(readlink "$SOURCE")"
         [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
     done
+
     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
     URL="$(git config --get remote.origin.url)"
     BRANCH="$(git rev-parse --abbrev-ref HEAD)"
