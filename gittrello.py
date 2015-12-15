@@ -290,7 +290,7 @@ try:
     # GitHub labels in .gittrello.json
     allLabels += [boardLabels[label['name']] for label in cardLabels if label['name'] in boardLabels]
 except Exception as e:
-    print e
+    # print e
     pass
 
 
