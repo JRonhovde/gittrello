@@ -174,7 +174,7 @@ if trelloLink == 1:
     boardID = getCard['board']['id']
     listName = getCard['list']['name']
     listID = getCard['list']['id']
-    cardName = re.sub(r"^\(\d\) ", "", getCard['name']) # remove Trello points from card name
+    cardName = re.sub(r"^\(\d+\) ", "", getCard['name']) # remove Trello points from card name
     cardURL = getCard['url']
     cardLabels = getCard['labels']
 
