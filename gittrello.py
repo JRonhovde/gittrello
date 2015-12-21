@@ -87,7 +87,7 @@ if len(userRemoveLabels) > 0:
     except:
         sys.exit('Invalid branch. Check that your branch is spelled correctly. Also check that your branch is associated with a pull request on GitHub')
 
-    userRemoveLabelsList = userRemoveLabels.split(', ')
+    userRemoveLabelsList = re.sub(' *, *', ',', userRemoveLabels).split(',')
 
     for userLabel in userRemoveLabelsList:
         checkLabelURL = githubBase+"/labels/"+urllib.quote(userLabel, safe='')+"?access_token="+gitHubToken
@@ -120,7 +120,8 @@ if len(userRemoveLabels) > 0:
 #{ # User labels(add labels to existing PR 
 if len(userAddLabels) > 0:
 
-    userAddLabelsList = userAddLabels.split(', ')
+    userAddLabelsList = re.sub(' *, *', ',', userAddLabels).split(',')
+
     githubBase = "https://api.github.com/repos/"+repoOwner+"/"+repoName
 
     verifiedLabels = []
@@ -289,7 +290,7 @@ try:
     # GitHub labels in .gittrello.json
     allLabels += [boardLabels[label['name']] for label in cardLabels if label['name'] in boardLabels]
 except Exception as e:
-    print e
+    # print e
     pass
 
 
