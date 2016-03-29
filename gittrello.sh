@@ -72,6 +72,9 @@ gittrello(){
     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
     URL="$(git config --get remote.origin.url)"
     BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+    if [ $BRANCH == "master" ]; then
+        PUSH=1
+    fi
     if [ $PUSH == 1 ]; then
         git push origin "$BRANCH"
     fi
