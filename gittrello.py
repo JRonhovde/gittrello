@@ -302,16 +302,16 @@ def label_prompt(label):
         return label
 
 try:
-    # confirm each label
-    allLabels = [label_prompt(label) for label in allLabels]
+    # confirm each label, filter out 'None' results
+    confirmedLabels = filter(None, (label_prompt(label) for label in allLabels) )
 except:
     pass
 
 
-if len(allLabels) > 0:
+if len(confirmedLabels) > 0:
     addLabelsURL = "https://api.github.com/repos/"+repoOwner+"/"+repoName+"/issues/"+str(prNumber)+"/labels?access_token="+gitHubToken
     try:
-        addLabels = requests.post(addLabelsURL, json.dumps(allLabels))
+        addLabels = requests.post(addLabelsURL, json.dumps(confirmedLabels))
     except:
         print "There was an error assigning labels to "+prTitle
 
