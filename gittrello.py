@@ -199,15 +199,15 @@ if trelloLink == 1:
         tag = raw_input("Enter a tag for this pull request (optional): ")
 
     response = ''
-    while response not in ("Y","n","Q"):
-        response = raw_input("Link this PR to '"+cardName+"' on the Trello '"+boardName+"' board? (Y/n/Q): ")
+    while response not in ("Y","y","n","Q"):
+        response = raw_input("Link this PR to '"+cardName+"' on the Trello '"+boardName+"' board? (y/n/Q): ")
 
 
     if response == 'Q':
         sys.exit("Pull request aborted")
     elif response == 'n':
         trelloLink = 0
-        continuePR = raw_input("Continue opening pull request? (Y/n): ")
+        continuePR = raw_input("Continue opening pull request? (y/n): ")
         if continuePR == 'n':
             sys.exit("Pull request aborted")
     elif len(tag) == 0:
@@ -227,8 +227,8 @@ else:
     prTitle = prName
 
 prTitleResponse = ''
-while prTitleResponse not in ("Y","n","Q"):
-    prTitleResponse = raw_input("Open a pull request with the title '"+prTitle+"' ? (Y/n/Q): ").strip()
+while prTitleResponse not in ("Y","y","n","Q"):
+    prTitleResponse = raw_input("Open a pull request with the title '"+prTitle+"' ? (y/n/Q): ").strip()
 
 if prTitleResponse == 'Q':
     sys.exit("Pull request aborted")
