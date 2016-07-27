@@ -1,9 +1,18 @@
 # !bin/bash
 gittrello(){
+    # Push branch to remote by default
     PUSH=1
+
+    # Always pass something in these two variables
     ADDLABEL=0
     REMOVELABEL=0
+
+    # $# is the number of parameters passed
     while test $# -gt 0; do
+        # '$1' is automatically populated with the first parameter.
+        #
+        # Shift(used below) directly modifies the array of parameters, changing
+        # the value of '$1'
         case "$1" in
             -h|--help)
                 echo "GitTrello - Link github pull requests and Trello cards"
@@ -29,7 +38,7 @@ gittrello(){
                 if test $# -gt 0; then
                     ADDLABEL="$1"
                 else
-                    echo "no label specified"
+                    echo "Error: No label specified"
                     exit 1
                 fi
                 shift
@@ -43,7 +52,7 @@ gittrello(){
                 if test $# -gt 0; then
                     REMOVELABEL="$1"
                 else
-                    echo "no label specified"
+                    echo "Error: No label specified"
                     exit 1
                 fi
                 shift
@@ -53,6 +62,7 @@ gittrello(){
                 shift
                 ;;
             -n|--no-push)
+                # don't push branch to remote
                 PUSH=0
                 shift
                 ;;
@@ -62,24 +72,39 @@ gittrello(){
         esac
     done
 
+    # Handle symlinks
+    #
+    # We need to get back to the directory where both scripts
+    # are located (.sh and .py)
     SOURCE="${BASH_SOURCE[0]}"
-    while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-        DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+    # while current script location is a symlink
+    while [ -h "$SOURCE" ]; do 
+        DIR="$( cd "$( dirname "$SOURCE" )" && pwd )"
         SOURCE="$(readlink "$SOURCE")"
-        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+        # if $SOURCE was a relative symlink, we need to resolve it 
+        # relative to the path where the symlink file was located
+        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" 
     done
 
-    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    DIR="$( cd "$( dirname "$SOURCE" )" && pwd )"
     URL="$(git config --get remote.origin.url)"
     BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+
+    # never push to remote master
     if [ $BRANCH == "master" ]; then
         PUSH=0
     fi
-    if [ $PUSH == 1 ]; then
+    if [ "$PUSH" -eq "1" ]; then
         git push origin "$BRANCH"
     fi
+
+    # Call Python script
+    # Note: All parameters must be populated
     python "$DIR/gittrello.py" "$BRANCH" "$URL" "$ADDLABEL" "$REMOVELABEL"
 }
+
+# Autocomplete function
 _gittrello() {
     local cur=${COMP_WORDS[COMP_CWORD]}
 
